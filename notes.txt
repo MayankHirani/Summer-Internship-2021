@@ -1,0 +1,100 @@
+using fivemers AAAAA-GGGGG, generate a vector of each sequence having the x1 x1 x3 values be the counts for each fivemer, and the outcomes be the +1/-1. The weights need to be figured out.
+
+
+Presentation Notes June 9, 2021
+• Using best values for parameters to match the input data to 
+• Supervised learning: Know the output should be for every output, use the parameters to train model
+	ex: Comparing predicted values with the real ones
+• Linear regression, Linear classification, decision trees and random forests
+• In unsupervised learning, you can have clustering, k-means clustering
+	Group the data that you get into clusters
+
+Regression: Predict something numeric
+Classification: Goal is to attach label to something, yes/no, or categories
+
+
+Linear Model
+f(x) = w*x + w0
+
+find optimal w and w0
+w = weight
+w0 = offset
+x = feature
+y = label
+
+Signal function: If we want a yes/no from a result, the signal function is
+	sign(y) = +1 if y >= 0 and -1 if y < 0
+
+Feature vector: The input value
+linear regression ex: f([x1, x2, x3]) = sign(w1x1 + w2x2 + w3x3 + w0)
+
+vector x = <x1, x2, x3>, one data point
+
+
+PROJECT NOTES
+
+• Predict a score for a sequence based on the patterns
+	- Protein (transcription factor, TF) binds to DNA and tells how the DNA should be expressed
+	- The protein binds only to a specific motiff
+• File name: The type of TF
+	- The chromosomes where it appears and 
+• Univariate, only one variable x1
+• Eventually will be used to predict a score for every sequence, of how likely a TF can bind there
+
+====================================
+To-Do
+
+June 16:
+Read in the testsequence FACA files and read them as one-hot matrices
+for each sequence, create a dictionary where key is the sequence name and value is the numpy array one hot matrix of it
+Write a function to read the PWM file and store it as a matrix or numpy array
+
+June 30: Convert every sequence from last week to a one hot matrix in the dictionary
+Either make a file with the names of the PWM files (.wtmx) or go through each file and check the extension. Load each PWM as a numpy array.
+Dictionary for each TF, the keys are the names of the files, values are the numpy arrays of the PWMs
+Read the wikipedia article on PWM matrices
+https://en.wikipedia.org/wiki/Position_weight_matrix
+
+https://en.wikipedia.org/wiki/Nucleic_acid_sequence
+
+
+July 7:
+In PWMs, use white noise by adding a small number (10^-5 x row sum)
+Convert every value to probability by dividing by the row sum
+bk (Background correction) = 0.25 for all letters (the probability of each character appearing in everything)
+In the final PWM, every value is Log2(value / bk)
+Score is the multiplication of each value (but it becomes addition because its log)
+Find the sequence that makes the highest score and store that score in the dictionary
+key: filename, value: [high score, PWM, sequence that made high score]
+
+July 15:
+Matrix multiplication with the PWM and the one-hot matrix, the score is the sum of the new matrix, use np.matmul()
+New dictionary: key is the name of the PWM, value is another dictionary with the sequence IDs as the keys and the high scores of the sequence (from sliding it down) as the value
+
+July 29:
+Maximum score for a PWM is the largest value in each row added together, store it in a dictionary (See end of July 7 task).
+Use the maximum score of each PWM from above dictionary to make sure that every score is below the possible maximum
+Read: https://en.wikipedia.org/wiki/Linear_regression
+https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html
+
+August 9:
+Store the scores in a Pandas dataframe where first column is the sequence ID and the second column is the ChIP score (the 2nd column in the .bed file). Every column afterwards is a different PWM, and the values in them are the scores that the sequence got with that PWM. Make column headers with the names of the PWMs. 2 Dataframes, df_train, df_test, one for train sequences, one for test ones.
+
+
+
+August 14:
+Objective: Find the PWM that predicts the best ChIP scores using the linear regression model. The PWMs are the TF binding PWMs from different data/experiments.
+The reg score is between 0 and 1, a 1 is no errors, perfectly predicted, how close of a line it is.
+Create a dataframe with 3 columns, col1 = PWM, col2 = the reg.score from the training features/labels, col3 = the reg.score using the test features/labels
+Rows will be all the different PWMs. The best score will be the one with the highest test score. 2 more columns optionally for the coefficients and the intercept
+.to_csv method to write dataframe to file, so we can see the dataframe.
+
+reg = LinearRegression().fit(list of scores for the pwm, list of chip scores)
+training score is reg.score(list of scores for the pwm, list of chip scores)
+test score is reg.score(list of test scores for the pwm, list of test chip scores)
+reg.coef_ gives a list of the weights
+reg.intercept_ gives the intercept
+
+
+The end product at a glance: Using a linear regression machine learning model to determine which PWM, created by different methods and data, is the best at predicting where the TF will bind.
+
